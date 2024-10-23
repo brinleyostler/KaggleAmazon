@@ -4,6 +4,7 @@ library(patchwork)
 library(tidymodels)
 library(embed)
 library(vroom)
+library(discrim)
 
 ## READ IN THE DATA ####
 amazon_test = vroom("./test.csv")
@@ -12,7 +13,7 @@ amazon_train = vroom("./train.csv")
 ## CLEAN THE DATA
 amazon_train$ACTION = factor(amazon_train$ACTION) #factor response variable
 #
-#### RANDOM FOREST ####
+#### NAIVE BAYES ####
 #### FEATURE ENGINEERING ####
 amazon_recipe <- recipe(ACTION ~., data=amazon_train) %>%
   step_mutate_at(all_numeric_predictors(), fn = factor) %>% # turn all numeric features into factors
@@ -24,20 +25,19 @@ amazon_recipe <- recipe(ACTION ~., data=amazon_train) %>%
 amazon_prepped = prep(amazon_recipe)
 baked <- bake(amazon_prepped, new_data = amazon_train)
 
-forest_model <- rand_forest(mtry = tune(),
-                      min_n=tune(),
-                      trees=500) %>%  # or 1000
-  set_engine("ranger") %>%
+nb_model <- naive_Bayes(Laplace=tune(),
+                      smoothness=tune()) %>%  
+  set_engine("naivebayes") %>%
   set_mode("classification")
 
 ## Put into a workflow
-forest_workflow <- workflow() %>% 
+nb_workflow <- workflow() %>% 
   add_recipe(amazon_recipe) %>% 
-  add_model(forest_model)
+  add_model(nb_model)
 
 ## Grid of values to tune over
-tuning_grid <- grid_regular(mtry(range = c(1,10)),
-                            min_n(),
+tuning_grid <- grid_regular(Laplace(),
+                            smoothness(),
                             levels=5)
 
 #### CV ####
@@ -45,7 +45,7 @@ tuning_grid <- grid_regular(mtry(range = c(1,10)),
 folds <- vfold_cv(amazon_train, v=5, repeats=1)
 
 ## Run the CV
-CV_results <- forest_workflow %>% 
+CV_results <- nb_workflow %>% 
   tune_grid(resamples=folds,
             grid=tuning_grid,
             metrics=metric_set(roc_auc, precision, accuracy))
@@ -71,6 +71,6 @@ recipe_kaggle_submission <- amazon_preds %>%
   select(id, ACTION)
 
 ## Write out file
-vroom_write(x=recipe_kaggle_submission, file="../../ForestPreds.csv", delim=",")
+vroom_write(x=recipe_kaggle_submission, file="../../NBPreds.csv", delim=",")
 
 
