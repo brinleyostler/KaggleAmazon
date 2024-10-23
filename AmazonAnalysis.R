@@ -56,7 +56,7 @@ best_tune <- CV_results %>%
   select_best(metric="roc_auc")
 
 #### Finalize the workflow and fit it ####
-final_wf <- forest_workflow %>% 
+final_wf <- nb_workflow %>% 
   finalize_workflow(best_tune) %>% 
   fit(data=amazon_train)
 
@@ -71,6 +71,6 @@ recipe_kaggle_submission <- amazon_preds %>%
   select(id, ACTION)
 
 ## Write out file
-vroom_write(x=recipe_kaggle_submission, file="../../NBPreds.csv", delim=",")
+vroom_write(x=recipe_kaggle_submission, file="NBPreds.csv", delim=",")
 
 
