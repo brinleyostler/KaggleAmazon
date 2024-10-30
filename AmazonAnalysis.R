@@ -5,6 +5,8 @@ library(tidymodels)
 library(embed)
 library(vroom)
 library(discrim)
+library(kernlab)
+library(themis)
 
 ## READ IN THE DATA ####
 amazon_test = vroom("./test.csv")
@@ -14,14 +16,16 @@ amazon_train = vroom("./train.csv")
 amazon_train$ACTION = factor(amazon_train$ACTION) #factor response variable
 #
 
-### PRINCIPLE COMPONENT -------
-## PCA RECIPE ####
+### SMOTE -------
+## SMOTE RECIPE ####
 amazon_recipe <- recipe(ACTION ~., data=amazon_train) %>%
   step_mutate_at(all_numeric_predictors(), fn = factor) %>% # turn all numeric features into factors
   step_other(all_nominal_predictors(), threshold = .001) %>% # combines categorical values that occur
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) %>% 
   step_normalize(all_predictors()) %>% #target encoding
-  step_pca(all_predictors(), threshold=.9) #Threshold is between 0 and 1
+  step_pca(all_predictors(), threshold=.9) %>% #Threshold is between 0 and 1
+  step_smote(all_outcomes(), neighbors=4)
+# also step_upsample() and step_downsample()
 
 amazon_prepped = prep(amazon_recipe)
 baked <- bake(amazon_prepped, new_data = amazon_train)
@@ -206,7 +210,7 @@ vroom_write(x=recipe_kaggle_submission, file="../../ForestPreds.csv", delim=",")
 
 ### NAIVE BAYES --------------
 nb_model <- naive_Bayes(Laplace=tune(),
-                      smoothness=tune()) %>%  
+                        smoothness=tune()) %>%  
   set_engine("naivebayes") %>%
   set_mode("classification")
 
