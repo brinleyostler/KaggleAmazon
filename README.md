@@ -28,4 +28,6 @@ The dataset used in this project is provided by Kaggle and includes the followin
 
 
 ## Model
+For this project, the Random Forest model was used for the final prediction, which gave me the best roc_auc (Receiver Operating Characteristic Area Under the Curve). My final Kaggle score was 0.88659.
+
 To view all models I experimented with for this competition, look through the Git history for the AmazonAnalysis.R file.
